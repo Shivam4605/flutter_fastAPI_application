@@ -1,4 +1,4 @@
-app = "fastapi-crud-app"
+app = "flutter-fastapi-application"
 primary_region = "bom"
 
 [build]
