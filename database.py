@@ -27,16 +27,8 @@
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-import os
-from dotenv import load_dotenv
 
-
-load_dotenv()
-
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "mysql+pymysql://username:shivam%40123@localhost:3306/info"
-)
+DATABASE_URL = "mysql+pymysql://username:shivam%40123@localhost:3306/info"
 
 engine = create_engine(
     DATABASE_URL,
