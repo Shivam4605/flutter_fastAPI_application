@@ -1,109 +1,104 @@
 # from fastapi import FastAPI
-# from database import engine, SessionLocal, Base
+# from database import SessionLocal
+# from models import Task
+# from schemas import TaskCreate
+# from database import engine
+# from fastapi import FastAPI 
 # import models
-# import schemas
+# models.Base.metadata.create_all(bind=engine)
 
 # app = FastAPI()
 
-# Base.metadata.create_all(bind=engine)
 
-# @app.post("/create_user")
-# def create_user(user: schemas.UserCreate):
+# # CREATE TASK
+# @app.post("/tasks")
+# def create_task(task: TaskCreate):
 
 #     db = SessionLocal()
 
-#     new_user = models.User(
-#         name=user.name,
-#         email=user.email
-#     )
+#     new_task = Task(description=task.description)
 
-#     db.add(new_user)
+#     db.add(new_task)
 #     db.commit()
-#     db.refresh(new_user)
 
-#     return {
-#         "message": "User saved successfully",
-#         "name": user.name,
-#         "email": user.email
-#     }
+#     return {"message": "Task created"}
 
-
-# @app.get("/get_users")
-# def get_users():
+# # GET TASKS
+# @app.get("/tasks")
+# def get_tasks():
 
 #     db = SessionLocal()
 
-#     users = db.query(models.User).all()
+#     tasks = db.query(Task).all()
 
-#     result = []
-
-#     for user in users:
-#         result.append({
-#             "id": user.id,
-#             "name": user.name,
-#             "email": user.email
-#         })
-
-#     return result
+#     return tasks
 
 
+# # UPDATE TASK
+# @app.put("/tasks/{task_id}")
+# def update_task(task_id: int, task: TaskCreate):
 
-from fastapi import FastAPI
-from database import SessionLocal
-from models import Task
+#     db = SessionLocal()
+
+#     existing_task = db.query(Task).filter(Task.id == task_id).first()
+
+#     existing_task.description = task.description
+
+#     db.commit()
+
+#     return {"message": "Task updated"}
+
+# # DELETE TASK
+# @app.delete("/tasks/{task_id}")
+# def delete_task(task_id: int):
+
+#     db = SessionLocal()
+
+#     task = db.query(Task).filter(Task.id == task_id).first()
+
+#     db.delete(task)
+
+#     db.commit()
+
+#     return {"message": "Task deleted"}
+
+
+
+from fastapi import FastAPI, Depends
+from sqlalchemy.orm import Session
+
+import models, crud
+from database import engine, SessionLocal
 from schemas import TaskCreate
+
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
 
-# CREATE TASK
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
 @app.post("/tasks")
-def create_task(task: TaskCreate):
+def create_task(task: TaskCreate, db: Session = Depends(get_db)):
+    return crud.create_task(db, task.description)
 
-    db = SessionLocal()
 
-    new_task = Task(description=task.description)
-
-    db.add(new_task)
-    db.commit()
-
-    return {"message": "Task created"}
-
-# GET TASKS
 @app.get("/tasks")
-def get_tasks():
-
-    db = SessionLocal()
-
-    tasks = db.query(Task).all()
-
-    return tasks
+def get_tasks(db: Session = Depends(get_db)):
+    return crud.get_tasks(db)
 
 
-# UPDATE TASK
 @app.put("/tasks/{task_id}")
-def update_task(task_id: int, task: TaskCreate):
+def update_task(task_id: int, task: TaskCreate, db: Session = Depends(get_db)):
+    return crud.update_task(db, task_id, task.description)
 
-    db = SessionLocal()
 
-    existing_task = db.query(Task).filter(Task.id == task_id).first()
-
-    existing_task.description = task.description
-
-    db.commit()
-
-    return {"message": "Task updated"}
-
-# DELETE TASK
 @app.delete("/tasks/{task_id}")
-def delete_task(task_id: int):
-
-    db = SessionLocal()
-
-    task = db.query(Task).filter(Task.id == task_id).first()
-
-    db.delete(task)
-
-    db.commit()
-
-    return {"message": "Task deleted"}
+def delete_task(task_id: int, db: Session = Depends(get_db)):
+    return crud.delete_task(db, task_id)
